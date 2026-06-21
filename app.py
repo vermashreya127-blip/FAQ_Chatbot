@@ -1,56 +1,42 @@
 import streamlit as st
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import nltk
+import numpy as np
 
-# Page Configuration
-st.set_page_config(
-    page_title="FAQ Chatbot",
-    page_icon="🤖",
-    layout="centered"
-)
+nltk.download('punkt')
 
-# Title
-st.title("🤖 FAQ Chatbot")
-st.write("### Ask me a question!")
+# FAQ dataset
+faqs = {
+    "What is AI?": "AI stands for Artificial Intelligence, which enables machines to think and learn like humans.",
+    "What is Python?": "Python is a high-level programming language used for AI, web development, and data science.",
+    "What is Streamlit?": "Streamlit is a Python library used to create web apps for data science and machine learning.",
+    "What is machine learning?": "Machine learning is a branch of AI that allows systems to learn from data automatically."
+}
 
-# Input
-question = st.text_input("Enter your question:")
+questions = list(faqs.keys())
+answers = list(faqs.values())
 
-# FAQ Logic
-if question:
-    question = question.lower()
+# Preprocess using TF-IDF
+vectorizer = TfidfVectorizer()
+X = vectorizer.fit_transform(questions)
 
-    if "hello" in question or "hi" in question:
-        st.success("Hello! How can I help you today? 😊")
+def get_response(user_input):
+    user_vec = vectorizer.transform([user_input])
+    similarity = cosine_similarity(user_vec, X)
+    idx = np.argmax(similarity)
 
-    elif "your name" in question:
-        st.success("I am an AI FAQ Chatbot.")
+    # If similarity is too low
+    if similarity[0][idx] < 0.3:
+        return "Sorry, I don't understand your question. Please try again."
 
-    elif "python" in question:
-        st.success(
-            "Python is a popular programming language used for web development, AI, automation, and data science."
-        )
+    return answers[idx]
 
-    elif "streamlit" in question:
-        st.success(
-            "Streamlit is a Python framework used to build interactive web applications quickly."
-        )
+# Streamlit UI
+st.title("FAQ Chatbot 🤖")
 
-    elif "ai" in question or "artificial intelligence" in question:
-        st.success(
-            "Artificial Intelligence enables machines to perform tasks that normally require human intelligence."
-        )
+user_input = st.text_input("Ask your question:")
 
-    elif "machine learning" in question:
-        st.success(
-            "Machine Learning is a branch of AI where computers learn patterns from data without being explicitly programmed."
-        )
-
-    elif "data science" in question:
-        st.success(
-            "Data Science involves collecting, analyzing, and visualizing data to gain useful insights."
-        )
-
-    elif "bye" in question:
-        st.success("Goodbye! Have a great day. 👋")
-
-    else:
-        st.warning("Sorry, I don't know the answer to that question.")
+if user_input:
+    response = get_response(user_input)
+    st.write("Bot:", response)
